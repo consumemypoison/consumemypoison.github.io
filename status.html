@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Status – MavTr3nT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{--bg:#0c0c0c;--card:#141414;--border:#1e1e1e;--green:#4ade80;--green-glow:rgba(74,222,128,.12);--gold:#fbbf24;--muted:#525252;--text:#a3a3a3;--white:#f5f5f5;--discord:#5865F2;}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;padding-bottom:120px;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(74,222,128,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+  .pixel-snow-container{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;z-index:1;pointer-events:none;contain:layout style paint;}
+  .pixel-snow-container canvas{display:block;width:100%;height:100%;transform:translateZ(0);will-change:transform;backface-visibility:hidden;}
+  nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2rem;background:rgba(12,12,12,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+  .nav-logo{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:.95rem;color:var(--white);text-decoration:none;letter-spacing:-.2px;}
+  .nav-dot{width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green);}50%{opacity:.4;box-shadow:0 0 3px var(--green);}}
+  .nav-links{display:flex;gap:1.8rem;list-style:none;}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .2s;}
+  .nav-links a:hover{color:var(--white);}
+  .page{position:relative;z-index:2;max-width:720px;margin:0 auto;padding:2rem 1.5rem;}
+  .section-label{font-size:.72rem;font-weight:500;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:1.6rem;font-family:'Fira Code',monospace;}
+  ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+  /* Status card */
+  .status-hero-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:2rem;}
+  .status-hero-title{font-size:1.5rem;font-weight:700;color:var(--white);margin-bottom:.5rem;}
+  .status-hero-sub{font-size:.9rem;color:var(--muted);margin-bottom:1.5rem;}
+
+  .status-badge-display{display:inline-flex;align-items:center;gap:.6rem;font-size:.9rem;font-weight:700;padding:.55rem 1.2rem;border-radius:999px;border:1px solid;margin-bottom:1.2rem;transition:all .3s;}
+  .badge-dot-lg{width:9px;height:9px;border-radius:50%;flex-shrink:0;animation:pulse 2s ease-in-out infinite;}
+
+  .status-message-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;font-size:.9rem;color:var(--text);line-height:1.7;min-height:3rem;}
+  .status-message-card.empty{color:var(--muted);font-style:italic;}
+
+  .status-meta{font-size:.75rem;color:var(--muted);margin-top:.75rem;font-family:'Fira Code',monospace;}
+
+  /* History */
+  .history-list{display:flex;flex-direction:column;gap:.75rem;}
+  .history-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;display:flex;align-items:flex-start;gap:1rem;}
+  .history-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:.35rem;}
+  .history-content{flex:1;}
+  .history-label{font-size:.82rem;font-weight:600;color:var(--white);margin-bottom:.2rem;}
+  .history-msg{font-size:.8rem;color:var(--muted);}
+  .history-time{font-size:.7rem;color:var(--muted);font-family:'Fira Code',monospace;margin-top:.2rem;opacity:.6;}
+  .empty-history{text-align:center;padding:2rem;color:var(--muted);font-size:.88rem;}
+
+  /* DOCK */
+  .dock-wrapper{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;align-items:center;}
+  .dock-panel{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(20,20,20,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.7);}
+  .dock-item{position:relative;width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:14px;cursor:pointer;transition:transform .18s cubic-bezier(.4,0,.2,1),background .15s;flex-shrink:0;text-decoration:none;color:var(--white);}
+  .dock-item:hover{background:rgba(255,255,255,0.11);transform:translateY(-8px);}
+  .dock-item.active{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.3);}
+  .dock-item svg{width:22px;height:22px;stroke:#c0c0c0;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s;pointer-events:none;}
+  .dock-item.active svg{stroke:var(--green);}
+  .dock-item:hover svg{stroke:#fff;}
+  .dock-label{position:absolute;bottom:calc(100% + 10px);left:50%;background:rgba(18,18,18,0.97);border:1px solid rgba(255,255,255,0.1);color:var(--white);font-size:.72rem;font-weight:600;padding:.3rem .75rem;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateX(-50%) translateY(5px);}
+  .dock-item:hover .dock-label{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="pixel-snow-container" id="snow-bg"></div>
+
+<nav>
+  <a class="nav-logo" href="index.html"><span class="nav-dot"></span>MavTr3nT</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="projects.html">Projects</a></li>
+    <li><a href="panel.html">Panel</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+  <p class="section-label">// current status</p>
+
+  <div class="status-hero-card">
+    <div class="status-hero-title">What's MavTr3nT up to?</div>
+    <div class="status-hero-sub">Live availability &amp; work status — updated directly from the panel.</div>
+
+    <div class="status-badge-display" id="status-badge">
+      <span class="badge-dot-lg" id="badge-dot"></span>
+      <span id="status-label-text">Loading…</span>
+    </div>
+
+    <div class="status-message-card" id="status-msg-box">
+      <span id="status-msg-text" class="empty">No status message set.</span>
+    </div>
+    <div class="status-meta" id="status-meta">Last updated: —</div>
+  </div>
+
+  <p class="section-label">// status history</p>
+  <div class="history-list" id="history-list">
+    <div class="empty-history">No history yet.</div>
+  </div>
+</div>
+
+<!-- DOCK -->
+<div class="dock-wrapper">
+  <div class="dock-panel">
+    <a href="index.html" class="dock-item"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg><span class="dock-label">Home</span></a>
+    <a href="status.html" class="dock-item active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="dock-label">Status</span></a>
+    <a href="projects.html" class="dock-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="dock-label">Projects</span></a>
+    <a href="panel.html" class="dock-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg><span class="dock-label">Panel</span></a>
+  </div>
+</div>
+
+<script>
+// ── Load & display status ──
+const STATUS_COLORS={green:{bg:'rgba(74,222,128,.12)',border:'rgba(74,222,128,.28)',col:'#4ade80'},yellow:{bg:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.28)',col:'#fbbf24'},red:{bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.28)',col:'#f87171'}};
+function loadStatus(){
+  const data=JSON.parse(localStorage.getItem('portfolio_status')||'{"level":"green","label":"Available for work","message":"","updated":""}');
+  const s=STATUS_COLORS[data.level]||STATUS_COLORS.green;
+  const badge=document.getElementById('status-badge');
+  const dot=document.getElementById('badge-dot');
+  badge.style.background=s.bg;badge.style.borderColor=s.border;badge.style.color=s.col;
+  dot.style.background=s.col;dot.style.boxShadow=`0 0 7px ${s.col}`;
+  document.getElementById('status-label-text').textContent=data.label||'Available for work';
+  const msgBox=document.getElementById('status-msg-text');
+  if(data.message){msgBox.textContent=data.message;msgBox.classList.remove('empty');}
+  else{msgBox.textContent='No status message set.';msgBox.classList.add('empty');}
+  const meta=document.getElementById('status-meta');
+  if(data.updated){const d=new Date(data.updated);meta.textContent='Last updated: '+d.toLocaleString();}
+}
+function loadHistory(){
+  const hist=JSON.parse(localStorage.getItem('portfolio_status_history')||'[]');
+  const list=document.getElementById('history-list');
+  if(!hist.length){list.innerHTML='<div class="empty-history">No history yet.</div>';return;}
+  list.innerHTML=hist.slice().reverse().map(h=>{
+    const s=STATUS_COLORS[h.level]||STATUS_COLORS.green;
+    const d=new Date(h.updated);
+    return `<div class="history-item">
+      <span class="history-dot" style="background:${s.col};box-shadow:0 0 6px ${s.col}"></span>
+      <div class="history-content">
+        <div class="history-label" style="color:${s.col}">${h.label||h.level}</div>
+        ${h.message?`<div class="history-msg">${h.message}</div>`:''}
+        <div class="history-time">${d.toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+loadStatus();loadHistory();
+</script>
+
+<script>
+// ── Pixel Snow ──
+(function(){
+  const vSh=`void main(){gl_Position=vec4(position,1.0);}`;
+  const fSh=`precision mediump float;uniform float uTime;uniform vec2 uResolution;uniform float uFlakeSize;uniform float uMinFlakeSize;uniform float uPixelResolution;uniform float uSpeed;uniform float uDepthFade;uniform float uFarPlane;uniform vec3 uColor;uniform float uBrightness;uniform float uGamma;uniform float uDensity;uniform float uVariant;uniform float uDirection;
+#define PI_OVER_6 0.5235988
+#define PI_OVER_3 1.0471976
+#define M1 1597334677U
+#define M2 3812015801U
+#define M3 3299493293U
+#define F0 2.3283064e-10
+#define hsh(n) (n*(n^(n>>15)))
+#define coord3(p) (uvec3(p).x*M1^uvec3(p).y*M2^uvec3(p).z*M3)
+const vec3 camK=vec3(0.57735027,0.57735027,0.57735027);const vec3 camI=vec3(0.70710678,0.0,-0.70710678);const vec3 camJ=vec3(-0.40824829,0.81649658,-0.40824829);const vec2 b1d=vec2(0.574,0.819);
+vec3 hash3(uint n){uvec3 h=hsh(n)*uvec3(1U,511U,262143U);return vec3(h)*F0;}
+float snowflakeDist(vec2 p){float r=length(p);float a=atan(p.y,p.x);a=abs(mod(a+PI_OVER_6,PI_OVER_3)-PI_OVER_6);vec2 q=r*vec2(cos(a),sin(a));float dM=max(abs(q.y),max(-q.x,q.x-1.0));float b1t=clamp(dot(q-vec2(0.4,0.0),b1d),0.0,0.4);float dB1=length(q-vec2(0.4,0.0)-b1t*b1d);float b2t=clamp(dot(q-vec2(0.7,0.0),b1d),0.0,0.25);float dB2=length(q-vec2(0.7,0.0)-b2t*b1d);return min(dM,min(dB1,dB2))*10.0;}
+void main(){float iP=1.0/uPixelResolution;float ps=max(1.0,floor(0.5+uResolution.x*iP));float ips=1.0/ps;vec2 fc=floor(gl_FragCoord.xy*ips);vec2 res=uResolution*ips;float iRX=1.0/res.x;vec3 ray=normalize(vec3((fc-res*0.5)*iRX,1.0));ray=ray.x*camI+ray.y*camJ+ray.z*camK;float ts=uTime*uSpeed;float wX=cos(uDirection)*0.4;float wY=sin(uDirection)*0.4;vec3 cPos=(wX*camI+wY*camJ+0.1*camK)*ts;vec3 pos=cPos;vec3 aR=max(abs(ray),vec3(0.001));vec3 st=1.0/aR;vec3 rS=step(ray,vec3(0.0));vec3 ph=fract(pos)*st;ph=mix(st-ph,ph,rS);float rDK=dot(ray,camK);float iRDK=1.0/rDK;float iDF=1.0/uDepthFade;float hIRX=0.5*iRX;vec3 tA=ts*0.1*vec3(7.0,8.0,5.0);float t=0.0;for(int i=0;i<128;i++){if(t>=uFarPlane)break;vec3 fp=floor(pos);uint cc=coord3(fp);float ch=hash3(cc).x;if(ch<uDensity){vec3 h=hash3(cc);vec3 s1=fp.yzx*0.073;vec3 s2=fp.zxy*0.27;vec3 fP=0.5-0.5*cos(4.0*sin(s1)+4.0*sin(s2)+2.0*h+tA);fP=fP*0.8+0.1+fp;float tI=dot(fP-pos,camK)*iRDK;if(tI>0.0){vec3 tP=pos+ray*tI-fP;float tX=dot(tP,camI);float tY=dot(tP,camJ);vec2 tUV=abs(vec2(tX,tY));float dep=dot(fP-cPos,camK);float fs=max(uFlakeSize,uMinFlakeSize*dep*hIRX);float dist;if(uVariant<0.5){dist=max(tUV.x,tUV.y);}else if(uVariant<1.5){dist=length(tUV);}else{dist=snowflakeDist(vec2(tX,tY)/fs)*fs;}if(dist<fs){float fr=uFlakeSize/fs;float intensity=exp2(-(t+tI)*iDF)*min(1.0,fr*fr)*uBrightness;gl_FragColor=vec4(uColor*pow(vec3(intensity),vec3(uGamma)),1.0);return;}}}float nS=min(min(ph.x,ph.y),ph.z);vec3 sel=step(ph,vec3(nS));ph=ph-nS+st*sel;t+=nS;pos=mix(pos+ray*nS,floor(pos+ray*nS+0.5),sel);}gl_FragColor=vec4(0.0);}`;
+  const cont=document.getElementById('snow-bg');
+  const{OrthographicCamera,Scene,PlaneGeometry,Mesh,ShaderMaterial,WebGLRenderer,Vector2,Color,Vector3}=THREE;
+  const rend=new WebGLRenderer({antialias:false,alpha:true,premultipliedAlpha:false,powerPreference:'high-performance',stencil:false,depth:false});
+  rend.setPixelRatio(Math.min(window.devicePixelRatio,2));rend.setSize(window.innerWidth,window.innerHeight);rend.setClearColor(0,0);cont.appendChild(rend.domElement);
+  const scene=new Scene(),cam=new OrthographicCamera(-1,1,1,-1,0,1);
+  const col=new Color('#e8f0ff');
+  const mat=new ShaderMaterial({vertexShader:vSh,fragmentShader:fSh,uniforms:{uTime:{value:0},uResolution:{value:new Vector2(window.innerWidth,window.innerHeight)},uFlakeSize:{value:.01},uMinFlakeSize:{value:1.25},uPixelResolution:{value:200},uSpeed:{value:1.25},uDepthFade:{value:8},uFarPlane:{value:20},uColor:{value:new Vector3(col.r,col.g,col.b)},uBrightness:{value:1},uGamma:{value:.4545},uDensity:{value:.3},uVariant:{value:0},uDirection:{value:125*Math.PI/180}},transparent:true});
+  scene.add(new Mesh(new PlaneGeometry(2,2),mat));
+  let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{rend.setSize(window.innerWidth,window.innerHeight);mat.uniforms.uResolution.value.set(window.innerWidth,window.innerHeight);},100);});
+  const t0=performance.now();(function loop(){requestAnimationFrame(loop);mat.uniforms.uTime.value=(performance.now()-t0)*.001;rend.render(scene,cam);})();
+})();
+</script>
+</body>
+</html>
