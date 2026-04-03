@@ -94,7 +94,7 @@
 
   <p class="section-label">// status history</p>
   <div class="history-list" id="history-list">
-    <div class="empty-history">No history yet.</div>
+    <div class="empty-history">Loading…</div>
   </div>
 </div>
 
@@ -109,40 +109,73 @@
 </div>
 
 <script>
-// ── Load & display status ──
-const STATUS_COLORS={green:{bg:'rgba(74,222,128,.12)',border:'rgba(74,222,128,.28)',col:'#4ade80'},yellow:{bg:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.28)',col:'#fbbf24'},red:{bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.28)',col:'#f87171'}};
-function loadStatus(){
-  const data=JSON.parse(localStorage.getItem('portfolio_status')||'{"level":"green","label":"Available for work","message":"","updated":""}');
-  const s=STATUS_COLORS[data.level]||STATUS_COLORS.green;
+// ════════════════════════════════════════════════════════
+//  FIREBASE CONFIG — paste your Realtime Database URL here
+// ════════════════════════════════════════════════════════
+const FIREBASE_URL = 'https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com';
+
+const STATUS_COLORS={
+  green:{bg:'rgba(74,222,128,.12)',border:'rgba(74,222,128,.28)',col:'#4ade80'},
+  yellow:{bg:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.28)',col:'#fbbf24'},
+  red:{bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.28)',col:'#f87171'}
+};
+
+async function loadStatus(){
+  try {
+    const res=await fetch(`${FIREBASE_URL}/status.json`);
+    const data=await res.json();
+    if(!data){showDefault();return;}
+    const s=STATUS_COLORS[data.level]||STATUS_COLORS.green;
+    const badge=document.getElementById('status-badge');
+    const dot=document.getElementById('badge-dot');
+    badge.style.background=s.bg;badge.style.borderColor=s.border;badge.style.color=s.col;
+    dot.style.background=s.col;dot.style.boxShadow=`0 0 7px ${s.col}`;
+    document.getElementById('status-label-text').textContent=data.label||'Available for work';
+    const msgText=document.getElementById('status-msg-text');
+    if(data.message){msgText.textContent=data.message;msgText.classList.remove('empty');}
+    else{msgText.textContent='No status message set.';msgText.classList.add('empty');}
+    const meta=document.getElementById('status-meta');
+    if(data.updated){const d=new Date(data.updated);meta.textContent='Last updated: '+d.toLocaleString();}
+  } catch(e){showDefault();}
+}
+
+function showDefault(){
+  const s=STATUS_COLORS.green;
   const badge=document.getElementById('status-badge');
   const dot=document.getElementById('badge-dot');
   badge.style.background=s.bg;badge.style.borderColor=s.border;badge.style.color=s.col;
   dot.style.background=s.col;dot.style.boxShadow=`0 0 7px ${s.col}`;
-  document.getElementById('status-label-text').textContent=data.label||'Available for work';
-  const msgBox=document.getElementById('status-msg-text');
-  if(data.message){msgBox.textContent=data.message;msgBox.classList.remove('empty');}
-  else{msgBox.textContent='No status message set.';msgBox.classList.add('empty');}
-  const meta=document.getElementById('status-meta');
-  if(data.updated){const d=new Date(data.updated);meta.textContent='Last updated: '+d.toLocaleString();}
+  document.getElementById('status-label-text').textContent='Available for work';
 }
-function loadHistory(){
-  const hist=JSON.parse(localStorage.getItem('portfolio_status_history')||'[]');
+
+async function loadHistory(){
   const list=document.getElementById('history-list');
-  if(!hist.length){list.innerHTML='<div class="empty-history">No history yet.</div>';return;}
-  list.innerHTML=hist.slice().reverse().map(h=>{
-    const s=STATUS_COLORS[h.level]||STATUS_COLORS.green;
-    const d=new Date(h.updated);
-    return `<div class="history-item">
-      <span class="history-dot" style="background:${s.col};box-shadow:0 0 6px ${s.col}"></span>
-      <div class="history-content">
-        <div class="history-label" style="color:${s.col}">${h.label||h.level}</div>
-        ${h.message?`<div class="history-msg">${h.message}</div>`:''}
-        <div class="history-time">${d.toLocaleString()}</div>
-      </div>
-    </div>`;
-  }).join('');
+  try {
+    const res=await fetch(`${FIREBASE_URL}/history.json`);
+    const hist=await res.json();
+    if(!Array.isArray(hist)||!hist.length){list.innerHTML='<div class="empty-history">No history yet.</div>';return;}
+    list.innerHTML=hist.slice().reverse().map(h=>{
+      const s=STATUS_COLORS[h.level]||STATUS_COLORS.green;
+      const d=new Date(h.updated);
+      return `<div class="history-item">
+        <span class="history-dot" style="background:${s.col};box-shadow:0 0 6px ${s.col}"></span>
+        <div class="history-content">
+          <div class="history-label" style="color:${s.col}">${h.label||h.level}</div>
+          ${h.message?`<div class="history-msg">${h.message}</div>`:''}
+          <div class="history-time">${d.toLocaleString()}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    list.innerHTML='<div class="empty-history">No history yet.</div>';
+  }
 }
-loadStatus();loadHistory();
+
+loadStatus();
+loadHistory();
+
+// Auto-refresh every 30 seconds so the page stays live
+setInterval(()=>{loadStatus();loadHistory();},30000);
 </script>
 
 <script>
